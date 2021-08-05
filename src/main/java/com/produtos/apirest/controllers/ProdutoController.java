@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
+import com.produtos.apirest.services.ProdutoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +29,13 @@ public class ProdutoController {
     Logger logger = LoggerFactory.getLogger(ProdutoController.class);
 
     @Autowired
-    ProdutoRepository produtoRepository;
+
+    ProdutoService produtoService;
     @CrossOrigin(origins = "*")
     @ApiOperation(value = "Retorna uma lista de Produtos")
     @GetMapping("/produtos")
     public ResponseEntity<List<ProdutoModel>> getAllProdutos() {
-        List<ProdutoModel> produtosList = produtoRepository.findAll();
+        List<ProdutoModel> produtosList = produtoService.findAll();
         if (produtosList.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
@@ -48,29 +50,29 @@ public class ProdutoController {
     @ApiOperation(value = "Retorna um produto unico")
     @GetMapping("/produtos/{id}")
     public ResponseEntity<ProdutoModel> getOneProduto(@PathVariable(value = "id") long id) {
-        Optional<ProdutoModel> produtoO = produtoRepository.findById(id);
-        if (!produtoO.isPresent()) {
+         ProdutoModel produto = produtoService.findById(id);
+        if (produto == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
-            produtoO.get().add(linkTo(methodOn(ProdutoController.class).getAllProdutos()).withRel("Lista de Produtos"));
-            return new ResponseEntity<ProdutoModel>(produtoO.get(), HttpStatus.OK);
+            produto.add(linkTo(methodOn(ProdutoController.class).getAllProdutos()).withRel("Lista de Produtos"));
+            return new ResponseEntity<ProdutoModel>(produto, HttpStatus.OK);
         }
     }
 
     @ApiOperation(value = "Salva um produto")
     @PostMapping("/produtos")
     public ResponseEntity<ProdutoModel> saveProduto(@RequestBody @Valid ProdutoModel produto) {
-        return new ResponseEntity<ProdutoModel>(produtoRepository.save(produto), HttpStatus.CREATED);
+        return new ResponseEntity<ProdutoModel>(produtoService.save(produto), HttpStatus.CREATED);
     }
 
     @ApiOperation(value = "Deleta um produto")
     @DeleteMapping("/produtos/{id}")
     public ResponseEntity<?> deleteProduto(@PathVariable(value = "id") long id) {
-        Optional<ProdutoModel> produtoO = produtoRepository.findById(id);
-        if (!produtoO.isPresent()) {
+        ProdutoModel produto = produtoService.findById(id);
+        if (produto == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
-            produtoRepository.delete(produtoO.get());
+            produtoService.deleteById(produto);
             return new ResponseEntity<>(HttpStatus.OK);
         }
     }
@@ -79,12 +81,12 @@ public class ProdutoController {
     @PutMapping("/produtos/{id}")
     public ResponseEntity<ProdutoModel> updateProduto(@PathVariable(value="id") long id,
                                                       @RequestBody @Valid ProdutoModel produto) {
-        Optional<ProdutoModel> produtoO = produtoRepository.findById(id);
-        if(!produtoO.isPresent()) {
+        ProdutoModel prod = produtoService.findById(id);
+        if (prod == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }else {
-            produto.setIdProduto(produtoO.get().getIdProduto());
-            return new ResponseEntity<ProdutoModel>(produtoRepository.save(produto), HttpStatus.OK);
+            prod.setIdProduto(prod.getIdProduto());
+            return new ResponseEntity<ProdutoModel>(produtoService.save(prod), HttpStatus.OK);
         }
     }
 }
